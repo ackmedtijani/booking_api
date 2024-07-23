@@ -1,0 +1,10 @@
+fastapi
+beanie
+motor
+python-jose
+python-dotenv
+passlib[bcrypt]
+requests
+pydantic
+pymongo
+uvicorn
