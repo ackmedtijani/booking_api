@@ -85,8 +85,9 @@ Returns all the bookings associated with user
 
 
 #### Updating a booking
-Endpoint: `/bookings`
+Endpoint: `/bookings/{booking_id}`
 Method: `PUT`
+Path Parameter: booking_id - specifies the id of the booking you want update. 
 payload: whatever field you want updated. However keep in mind that there are some constraints. Can't change booking time to be lower than the current time or greater than end_time.
 Authorization(Header): "Bearer {access_token}". Pass your access token as a header
 
