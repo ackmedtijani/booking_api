@@ -29,11 +29,7 @@ from auth import (authenticate_user ,
 
 app = FastAPI()
 
-print("os client secret" , os.environ.get("GOOGLE_CLIENT_SECRET"))
-
 OAUTH_CONFIG = {
-    # Google OAuth 2.0 documentation:
-    # https://developers.google.com/identity/protocols/oauth2/web-server#httprest
     'google': {
         'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
         'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET'),
@@ -46,21 +42,7 @@ OAUTH_CONFIG = {
         },
         'scopes': ['https://www.googleapis.com/auth/userinfo.email' ,
                    "https://www.googleapis.com/auth/userinfo.profile"],
-    },
-
-    # GitHub OAuth 2.0 documentation:
-    # https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps
-    'github': {
-        'client_id': os.environ.get('GITHUB_CLIENT_ID'),
-        'client_secret': os.environ.get('GITHUB_CLIENT_SECRET'),
-        'authorize_url': 'https://github.com/login/oauth/authorize',
-        'token_url': 'https://github.com/login/oauth/access_token',
-        'userinfo': {
-            'url': 'https://api.github.com/user/emails',
-            'email': lambda json: json[0]['email'],
-        },
-        'scopes': ['user:email'],
-    },
+    }
 }
 
 @app.on_event("startup")
@@ -91,7 +73,7 @@ def oauth2_authorize(request : Request, provider : str):
     # redirect the user to the OAuth2 provider authorization URL
     return {"authorization_url" : provider_data['authorize_url'] + '?' + qs}
 
-@app.get('/callback/{provider}' , response_model=AccessToken)
+@app.get('/callback/{provider}' , response_model=Token)
 async def oauth2_callback(provider : str , request : Request , 
                     error : str = None , code : str = None , 
                     ):
@@ -162,8 +144,12 @@ async def oauth2_callback(provider : str , request : Request ,
     access_token = create_access_token(
         data={"sub": email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
     
+    refresh_token = create_access_token(
+        data={'sub' : email} , expires_delta = timedelta(REFRESH_TOKEN_EXPIRE_MINUTES)
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer" , "refresh_token" : refresh_token}  
     
     
 @app.post("/token", response_model=Token)
@@ -184,7 +170,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         data={'sub' : user.email} , expires_delta = timedelta(REFRESH_TOKEN_EXPIRE_MINUTES)
     )
     
-    print("refrresh" , refresh_token)
     return {"access_token": access_token, "token_type": "bearer" , "refresh_token" : refresh_token}  
             
 
